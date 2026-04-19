@@ -1,4 +1,4 @@
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -12,6 +12,7 @@ type HomeScreenContentProps = {
   isLoading: boolean;
   latestPerTemplate: TemplateLatestCompletedWorkout[];
   nextWorkout: NextRecommendedWorkoutDay | null;
+  onTemplatePress: (templateId: string) => void;
 };
 
 type HomePalette = {
@@ -61,6 +62,7 @@ export function HomeScreenContent({
   isLoading,
   latestPerTemplate,
   nextWorkout,
+  onTemplatePress,
 }: HomeScreenContentProps) {
   const colorScheme = useColorScheme() ?? 'dark';
   const theme = Colors[colorScheme];
@@ -146,8 +148,11 @@ export function HomeScreenContent({
             const latestWorkout = template.latestCompletedWorkout;
 
             return (
-              <ThemedView
+              <Pressable
                 key={template.templateId}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${template.templateName} workout logger`}
+                onPress={() => onTemplatePress(template.templateId)}
                 style={[
                   styles.templateCard,
                   {
@@ -183,7 +188,7 @@ export function HomeScreenContent({
                     </ThemedText>
                   </View>
                 )}
-              </ThemedView>
+              </Pressable>
             );
           })}
         </View>

@@ -7,6 +7,17 @@ export type ActiveWorkoutTemplate = {
   orderIndex: number;
 };
 
+export type ActiveTemplateExercise = {
+  id: string;
+  name: string;
+  orderIndex: number;
+  templateId: string;
+};
+
+export type ActiveWorkoutTemplateDetail = ActiveWorkoutTemplate & {
+  exercises: ActiveTemplateExercise[];
+};
+
 export type NextRecommendedWorkoutDay = {
   activeTemplateCount: number;
   basedOnCompletedWorkoutId: string | null;
@@ -19,6 +30,13 @@ type ActiveWorkoutTemplateRow = {
   id: string;
   name: string;
   order_index: number;
+};
+
+type ActiveTemplateExerciseRow = {
+  id: string;
+  name: string;
+  order_index: number;
+  template_id: string;
 };
 
 type LastCompletedTemplateRow = {
@@ -49,6 +67,43 @@ export class TemplateRepository {
       name: row.name,
       orderIndex: row.order_index,
     }));
+  }
+
+  async getActiveTemplateById(templateId: string): Promise<ActiveWorkoutTemplateDetail | null> {
+    const templateRow = await this.database.getFirstAsync<ActiveWorkoutTemplateRow>(
+      `SELECT id, code, name, order_index
+       FROM workout_templates
+       WHERE id = ?
+         AND is_active = 1
+       LIMIT 1;`,
+      templateId
+    );
+
+    if (!templateRow) {
+      return null;
+    }
+
+    const exerciseRows = await this.database.getAllAsync<ActiveTemplateExerciseRow>(
+      `SELECT id, template_id, name, order_index
+       FROM workout_template_exercises
+       WHERE template_id = ?
+         AND is_active = 1
+       ORDER BY order_index ASC, id ASC;`,
+      templateId
+    );
+
+    return {
+      id: templateRow.id,
+      code: templateRow.code,
+      name: templateRow.name,
+      orderIndex: templateRow.order_index,
+      exercises: exerciseRows.map((row) => ({
+        id: row.id,
+        templateId: row.template_id,
+        name: row.name,
+        orderIndex: row.order_index,
+      })),
+    };
   }
 
   async getNextRecommendedWorkoutDay(): Promise<NextRecommendedWorkoutDay | null> {

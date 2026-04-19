@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useIsFocused } from '@react-navigation/native';
 
 import { bootstrapDatabase } from '@/db/bootstrap';
 import { TemplateRepository, WorkoutLogRepository } from '@/db/repositories';
@@ -13,12 +14,17 @@ type HomeScreenDataState = {
 };
 
 export function useHomeScreenData(): HomeScreenDataState {
+  const isFocused = useIsFocused();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [nextWorkout, setNextWorkout] = useState<NextRecommendedWorkoutDay | null>(null);
   const [latestPerTemplate, setLatestPerTemplate] = useState<TemplateLatestCompletedWorkout[]>([]);
 
   useEffect(() => {
+    if (!isFocused) {
+      return;
+    }
+
     let isMounted = true;
 
     async function loadHomeScreenData(): Promise<void> {
@@ -61,7 +67,7 @@ export function useHomeScreenData(): HomeScreenDataState {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [isFocused]);
 
   return {
     isLoading,
