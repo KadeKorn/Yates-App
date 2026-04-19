@@ -2,6 +2,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { getDatabaseClient } from '@/db/client';
 import { runMigrations } from '@/db/migrations';
+import { runSeeds } from '@/db/seeds';
 
 let bootstrapPromise: Promise<SQLiteDatabase> | null = null;
 
@@ -10,6 +11,7 @@ export async function bootstrapDatabase(): Promise<SQLiteDatabase> {
     bootstrapPromise = (async () => {
       const database = await getDatabaseClient();
       await runMigrations(database);
+      await runSeeds(database);
       return database;
     })().catch((error) => {
       bootstrapPromise = null;
