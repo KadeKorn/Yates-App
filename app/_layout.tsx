@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
+import { useDatabaseBootstrap } from '@/hooks/use-database-bootstrap';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export const unstable_settings = {
@@ -10,7 +11,16 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
+  const { error, isReady } = useDatabaseBootstrap();
   const colorScheme = useColorScheme();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!isReady) {
+    return null;
+  }
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
