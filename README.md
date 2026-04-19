@@ -1,50 +1,97 @@
-# Welcome to your Expo app 👋
+# HIT Log
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A mobile-first, local-first workout logging app for HIT / Dorian Yates style training.
 
-## Get started
+## Current MVP
 
-1. Install dependencies
+The current MVP is focused on one clear use case:
 
-   ```bash
-   npm install
-   ```
+- seeded Day 1 / Day 2 / Day 5 workout templates
+- next-workout recommendation logic
+- latest logs by active template
+- fast workout logging
+- exercise history
+- editable workout templates
+- SQLite local persistence
+- offline-first behavior
 
-2. Start the app
+This is **not** the full future-state fitness platform yet.
 
-   ```bash
-   npx expo start
-   ```
+The current MVP does **not** include:
+- cloud sync
+- authentication
+- analytics
+- AI coaching
+- calendar scheduling engine
+- wearable integrations
+- custom multi-program builder
+- search/filter UI
 
-In the output, you'll find options to open the app in a
+## Current progress
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### Completed
+- [x] Expo SDK 54 app setup
+- [x] GitHub repo setup
+- [x] Product spec
+- [x] Architecture doc
+- [x] Scope and coding standards docs
+- [x] SQLite foundation
+- [x] Schema + migration bootstrap
+- [x] Plan C seed templates and exercises
+- [x] Repository read queries
+- [x] Queue recommendation logic
+- [x] DB-backed Home screen
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### In progress
+- [ ] Workout logger flow
+- [ ] Save completed workout atomically
+- [ ] Exercise history screen
+- [ ] Template editor
 
-## Get a fresh project
+### Future state
+- [ ] Multiple training systems/templates
+- [ ] Custom template builder
+- [ ] Home workout mode
+- [ ] Calisthenics mode
+- [ ] CrossFit-style templates
+- [ ] Search / filter UI
+- [ ] Cloud sync
+- [ ] Broader progression tooling
 
-When you're ready, run:
+## What this repo is
+
+HIT Log is a local-first workout logger built for fast gym use.
+
+The current product direction is:
+- open the app
+- see what workout is next
+- review latest logs
+- log a workout quickly
+- save it locally
+- come back next time and compare against prior performance
+
+## Tech stack
+
+- Expo
+- React Native
+- TypeScript
+- Expo Router
+- expo-sqlite
+
+## Repository docs
+
+Read these before making meaningful changes:
+
+- `PRODUCT_SPEC.md`
+- `ARCHITECTURE.md`
+- `TASKLIST.md`
+- `UI_RULES.md`
+- `CODING_STANDARDS.md`
+- `CONTRIBUTING.md`
+
+## Bootstrap
 
 ```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+npx create-expo-app@latest --template default hit-log
+cd hit-log
+npx expo install expo-router expo-sqlite react-native-safe-area-context react-native-screens expo-status-bar
