@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
+import { useIsFocused } from '@react-navigation/native';
 
 import { bootstrapDatabase } from '@/db/bootstrap';
 import {
+  ExerciseLogRepository,
   TemplateRepository,
   WorkoutLoggerRepository,
 } from '@/db/repositories';
+import type { LatestExercisePerformance } from '@/db/repositories/exercise-log-repository';
 import type {
   ActiveTemplateExercise,
   ActiveWorkoutTemplateDetail,
@@ -42,6 +45,7 @@ type UseWorkoutLoggerScreenResult = {
   exercises: WorkoutLoggerExerciseDraft[];
   isLoading: boolean;
   isSaving: boolean;
+  latestPerformanceByExerciseId: Record<string, LatestExercisePerformance>;
   saveError: string | null;
   template: ActiveWorkoutTemplateDetail | null;
   addSet: (exerciseId: string) => void;
@@ -95,14 +99,22 @@ function isValidSetDraft(set: WorkoutLoggerSetDraft): boolean {
 }
 
 export function useWorkoutLoggerScreen(templateId: string): UseWorkoutLoggerScreenResult {
+  const isFocused = useIsFocused();
   const [template, setTemplate] = useState<ActiveWorkoutTemplateDetail | null>(null);
   const [exercises, setExercises] = useState<WorkoutLoggerExerciseDraft[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [latestPerformanceByExerciseId, setLatestPerformanceByExerciseId] = useState<
+    Record<string, LatestExercisePerformance>
+  >({});
   const [error, setError] = useState<Error | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!isFocused) {
+      return;
+    }
+
     let isMounted = true;
 
     async function loadTemplate(): Promise<void> {
@@ -113,6 +125,7 @@ export function useWorkoutLoggerScreen(templateId: string): UseWorkoutLoggerScre
 
         const database = await bootstrapDatabase();
         const templateRepository = new TemplateRepository(database);
+        const exerciseLogRepository = new ExerciseLogRepository(database);
         const loadedTemplate = await templateRepository.getActiveTemplateById(templateId);
 
         if (!isMounted) {
@@ -122,12 +135,22 @@ export function useWorkoutLoggerScreen(templateId: string): UseWorkoutLoggerScre
         if (!loadedTemplate) {
           setTemplate(null);
           setExercises([]);
+          setLatestPerformanceByExerciseId({});
           setError(new Error('Workout template not found.'));
+          return;
+        }
+
+        const latestPerformance = await exerciseLogRepository.getLatestPerformanceByTemplateExerciseIds(
+          loadedTemplate.exercises.map((exercise) => exercise.id)
+        );
+
+        if (!isMounted) {
           return;
         }
 
         setTemplate(loadedTemplate);
         setExercises(loadedTemplate.exercises.map(createExerciseDraft));
+        setLatestPerformanceByExerciseId(latestPerformance);
       } catch (loadError) {
         if (!isMounted) {
           return;
@@ -148,7 +171,7 @@ export function useWorkoutLoggerScreen(templateId: string): UseWorkoutLoggerScre
     return () => {
       isMounted = false;
     };
-  }, [templateId]);
+  }, [isFocused, templateId]);
 
   function updateExercise(
     exerciseId: string,
@@ -292,6 +315,7 @@ export function useWorkoutLoggerScreen(templateId: string): UseWorkoutLoggerScre
     exercises,
     isLoading,
     isSaving,
+    latestPerformanceByExerciseId,
     error,
     saveError,
     addSet,

@@ -11,6 +11,7 @@ export default function WorkoutLoggerRoute() {
     exercises,
     isLoading,
     isSaving,
+    latestPerformanceByExerciseId,
     error,
     saveError,
     addSet,
@@ -28,10 +29,17 @@ export default function WorkoutLoggerRoute() {
       exercises={exercises}
       isLoading={isLoading}
       isSaving={isSaving}
+      latestPerformanceByExerciseId={latestPerformanceByExerciseId}
       saveError={saveError}
       template={template}
       onAddSet={addSet}
       onDismissSaveError={dismissSaveError}
+      onOpenHistory={(templateExerciseId) =>
+        router.push({
+          pathname: '/history/[templateExerciseId]',
+          params: { templateExerciseId },
+        })
+      }
       onSaveWorkout={() =>
         void saveWorkout({
           onComplete: () => {

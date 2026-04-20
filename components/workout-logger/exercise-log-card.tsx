@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
+import type { LatestExercisePerformance } from '@/db/repositories/exercise-log-repository';
 import type { WorkoutLoggerExerciseDraft } from '@/hooks/use-workout-logger-screen';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
@@ -9,6 +10,7 @@ import { ExerciseSetRow } from './exercise-set-row';
 
 type ExerciseLogCardProps = {
   exercise: WorkoutLoggerExerciseDraft;
+  latestPerformance: LatestExercisePerformance | null;
   palette: {
     accent: string;
     border: string;
@@ -17,6 +19,7 @@ type ExerciseLogCardProps = {
     surfaceMuted: string;
   };
   onAddSet: () => void;
+  onOpenHistory: () => void;
   onToggleExerciseNote: () => void;
   onToggleSetNote: (setId: string) => void;
   onUpdateExerciseNotes: (value: string) => void;
@@ -29,8 +32,10 @@ type ExerciseLogCardProps = {
 
 export function ExerciseLogCard({
   exercise,
+  latestPerformance,
   palette,
   onAddSet,
+  onOpenHistory,
   onToggleExerciseNote,
   onToggleSetNote,
   onUpdateExerciseNotes,
@@ -38,6 +43,7 @@ export function ExerciseLogCard({
 }: ExerciseLogCardProps) {
   const colorScheme = useColorScheme() ?? 'dark';
   const theme = Colors[colorScheme];
+  const latestSets = latestPerformance?.sets.slice(0, 2) ?? [];
 
   return (
     <View
@@ -57,6 +63,34 @@ export function ExerciseLogCard({
             Exercise {exercise.orderIndex}
           </ThemedText>
         </View>
+
+        {latestPerformance ? (
+          <View
+            style={[
+              styles.lastTimeBlock,
+              {
+                backgroundColor: palette.surfaceMuted,
+                borderColor: palette.border,
+              },
+            ]}>
+            <ThemedText style={[styles.lastTimeLabel, { color: palette.accent }]}>
+              Last time
+            </ThemedText>
+            <ThemedText style={[styles.lastTimeDate, { color: palette.muted }]}>
+              {formatCompletedDate(latestPerformance.completedAt)}
+            </ThemedText>
+            {latestSets.map((set) => (
+              <ThemedText key={set.id} style={[styles.lastTimeText, { color: theme.text }]}>
+                {formatCompactSetLine(set)}
+              </ThemedText>
+            ))}
+            {latestPerformance.notes ? (
+              <ThemedText style={[styles.lastTimeMeta, { color: palette.muted }]}>
+                Includes notes
+              </ThemedText>
+            ) : null}
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.setList}>
@@ -74,6 +108,10 @@ export function ExerciseLogCard({
       <View style={styles.actionRow}>
         <Pressable accessibilityRole="button" onPress={onAddSet} style={styles.actionButton}>
           <ThemedText style={[styles.actionText, { color: palette.accent }]}>Add set</ThemedText>
+        </Pressable>
+
+        <Pressable accessibilityRole="button" onPress={onOpenHistory} style={styles.actionButton}>
+          <ThemedText style={[styles.actionText, { color: palette.accent }]}>View history</ThemedText>
         </Pressable>
 
         <Pressable
@@ -108,6 +146,25 @@ export function ExerciseLogCard({
   );
 }
 
+function formatCompletedDate(value: string): string {
+  const parsedDate = new Date(value);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(parsedDate);
+}
+
+function formatCompactSetLine(set: LatestExercisePerformance['sets'][number]): string {
+  const setLabel = set.setType === 'working' ? '' : `${set.setType} `;
+  return `${setLabel}${set.weightText} x ${set.repsText}`;
+}
+
 const styles = StyleSheet.create({
   actionButton: {
     alignSelf: 'flex-start',
@@ -130,6 +187,31 @@ const styles = StyleSheet.create({
   },
   header: {
     gap: 8,
+  },
+  lastTimeBlock: {
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 4,
+    padding: 12,
+  },
+  lastTimeDate: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  lastTimeLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.9,
+    lineHeight: 16,
+    textTransform: 'uppercase',
+  },
+  lastTimeMeta: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  lastTimeText: {
+    fontSize: 14,
+    lineHeight: 20,
   },
   noteInput: {
     borderRadius: 12,

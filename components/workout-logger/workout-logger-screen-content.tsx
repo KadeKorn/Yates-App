@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'reac
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
+import type { LatestExercisePerformance } from '@/db/repositories/exercise-log-repository';
 import type { ActiveWorkoutTemplateDetail } from '@/db/repositories/template-repository';
 import type { WorkoutLoggerExerciseDraft } from '@/hooks/use-workout-logger-screen';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -14,10 +15,12 @@ type WorkoutLoggerScreenContentProps = {
   exercises: WorkoutLoggerExerciseDraft[];
   isLoading: boolean;
   isSaving: boolean;
+  latestPerformanceByExerciseId: Record<string, LatestExercisePerformance>;
   saveError: string | null;
   template: ActiveWorkoutTemplateDetail | null;
   onAddSet: (exerciseId: string) => void;
   onDismissSaveError: () => void;
+  onOpenHistory: (templateExerciseId: string) => void;
   onSaveWorkout: () => void;
   onToggleExerciseNote: (exerciseId: string) => void;
   onToggleSetNote: (exerciseId: string, setId: string) => void;
@@ -63,10 +66,12 @@ export function WorkoutLoggerScreenContent({
   exercises,
   isLoading,
   isSaving,
+  latestPerformanceByExerciseId,
   saveError,
   template,
   onAddSet,
   onDismissSaveError,
+  onOpenHistory,
   onSaveWorkout,
   onToggleExerciseNote,
   onToggleSetNote,
@@ -155,8 +160,10 @@ export function WorkoutLoggerScreenContent({
             <ExerciseLogCard
               key={exercise.id}
               exercise={exercise}
+              latestPerformance={latestPerformanceByExerciseId[exercise.templateExerciseId] ?? null}
               palette={palette}
               onAddSet={() => onAddSet(exercise.id)}
+              onOpenHistory={() => onOpenHistory(exercise.templateExerciseId)}
               onToggleExerciseNote={() => onToggleExerciseNote(exercise.id)}
               onToggleSetNote={(setId) => onToggleSetNote(exercise.id, setId)}
               onUpdateExerciseNotes={(value) => onUpdateExerciseNotes(exercise.id, value)}

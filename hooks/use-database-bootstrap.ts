@@ -8,11 +8,13 @@ type BootstrapState = {
   isReady: boolean;
 };
 
-let splashScreenPromise: Promise<void> | null = null;
+let splashScreenPromise: Promise<void> | undefined;
 
 function ensureSplashScreenIsPrevented(): Promise<void> {
   if (!splashScreenPromise) {
-    splashScreenPromise = SplashScreen.preventAutoHideAsync().catch(() => undefined);
+    splashScreenPromise = SplashScreen.preventAutoHideAsync()
+      .then(() => undefined)
+      .catch(() => undefined);
   }
 
   return splashScreenPromise;
@@ -42,7 +44,9 @@ export function useDatabaseBootstrap(): BootstrapState {
           );
         }
       } finally {
-        await SplashScreen.hideAsync().catch(() => undefined);
+        await SplashScreen.hideAsync()
+          .then(() => undefined)
+          .catch(() => undefined);
       }
     }
 

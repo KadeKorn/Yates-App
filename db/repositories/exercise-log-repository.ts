@@ -27,6 +27,16 @@ export type ExerciseHistoryEntry = {
   workoutLogId: string;
 };
 
+export type LatestExercisePerformance = {
+  completedAt: string;
+  exerciseLogId: string;
+  exerciseNameSnapshot: string;
+  notes: string | null;
+  sets: ExerciseHistorySet[];
+  templateExerciseId: string;
+  workoutLogId: string;
+};
+
 type ExerciseHistoryRow = {
   carry_forward: number;
   carry_forward_note: string | null;
@@ -46,6 +56,22 @@ type ExerciseHistoryRow = {
   template_exercise_id: string;
   template_id: string;
   template_name: string;
+  weight_text: string | null;
+  workout_log_id: string;
+};
+
+type LatestExercisePerformanceRow = {
+  completed_at: string;
+  exercise_log_id: string;
+  exercise_name_snapshot: string;
+  exercise_note: string | null;
+  reps_text: string | null;
+  set_id: string | null;
+  set_index: number | null;
+  set_note: string | null;
+  set_side: string | null;
+  set_type: string | null;
+  template_exercise_id: string;
   weight_text: string | null;
   workout_log_id: string;
 };
@@ -131,5 +157,85 @@ export class ExerciseLogRepository {
     }
 
     return Array.from(historyByExerciseLogId.values());
+  }
+
+  async getLatestPerformanceByTemplateExerciseIds(
+    templateExerciseIds: string[]
+  ): Promise<Record<string, LatestExercisePerformance>> {
+    if (templateExerciseIds.length === 0) {
+      return {};
+    }
+
+    const placeholders = templateExerciseIds.map(() => '?').join(', ');
+    const rows = await this.database.getAllAsync<LatestExercisePerformanceRow>(
+      `SELECT
+         el.template_exercise_id,
+         el.id AS exercise_log_id,
+         el.exercise_name_snapshot,
+         el.notes AS exercise_note,
+         wl.id AS workout_log_id,
+         wl.completed_at,
+         es.id AS set_id,
+         es.set_index,
+         es.set_type,
+         es.weight_text,
+         es.reps_text,
+         es.side AS set_side,
+         es.note AS set_note
+       FROM exercise_logs el
+       INNER JOIN workout_logs wl ON wl.id = el.workout_log_id
+       LEFT JOIN exercise_sets es ON es.exercise_log_id = el.id
+       WHERE el.template_exercise_id IN (${placeholders})
+         AND wl.status = 'completed'
+         AND wl.completed_at IS NOT NULL
+         AND NOT EXISTS (
+           SELECT 1
+           FROM exercise_logs newer
+           INNER JOIN workout_logs newer_workout ON newer_workout.id = newer.workout_log_id
+           WHERE newer.template_exercise_id = el.template_exercise_id
+             AND newer_workout.status = 'completed'
+             AND newer_workout.completed_at IS NOT NULL
+             AND (
+               newer_workout.completed_at > wl.completed_at
+               OR (newer_workout.completed_at = wl.completed_at AND newer.id > el.id)
+             )
+         )
+       ORDER BY wl.completed_at DESC, el.id DESC, es.set_index ASC, es.id ASC;`,
+      ...templateExerciseIds
+    );
+
+    const latestPerformanceByTemplateExerciseId = new Map<string, LatestExercisePerformance>();
+
+    for (const row of rows) {
+      const existingPerformance = latestPerformanceByTemplateExerciseId.get(
+        row.template_exercise_id
+      );
+
+      if (!existingPerformance) {
+        latestPerformanceByTemplateExerciseId.set(row.template_exercise_id, {
+          templateExerciseId: row.template_exercise_id,
+          exerciseLogId: row.exercise_log_id,
+          workoutLogId: row.workout_log_id,
+          completedAt: row.completed_at,
+          exerciseNameSnapshot: row.exercise_name_snapshot,
+          notes: row.exercise_note,
+          sets: [],
+        });
+      }
+
+      if (row.set_id) {
+        latestPerformanceByTemplateExerciseId.get(row.template_exercise_id)?.sets.push({
+          id: row.set_id,
+          setIndex: row.set_index as number,
+          setType: row.set_type as string,
+          weightText: row.weight_text as string,
+          repsText: row.reps_text as string,
+          side: row.set_side,
+          note: row.set_note,
+        });
+      }
+    }
+
+    return Object.fromEntries(latestPerformanceByTemplateExerciseId.entries());
   }
 }
