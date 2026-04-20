@@ -37,6 +37,17 @@ export type LatestExercisePerformance = {
   workoutLogId: string;
 };
 
+export type LatestWorkingSet = {
+  completedAt: string;
+  exerciseLogId: string;
+  repsText: string;
+  setId: string;
+  setIndex: number;
+  templateExerciseId: string;
+  weightText: string;
+  workoutLogId: string;
+};
+
 type ExerciseHistoryRow = {
   carry_forward: number;
   carry_forward_note: string | null;
@@ -73,6 +84,17 @@ type LatestExercisePerformanceRow = {
   set_type: string | null;
   template_exercise_id: string;
   weight_text: string | null;
+  workout_log_id: string;
+};
+
+type LatestWorkingSetRow = {
+  completed_at: string;
+  exercise_log_id: string;
+  reps_text: string;
+  set_id: string;
+  set_index: number;
+  template_exercise_id: string;
+  weight_text: string;
   workout_log_id: string;
 };
 
@@ -237,5 +259,75 @@ export class ExerciseLogRepository {
     }
 
     return Object.fromEntries(latestPerformanceByTemplateExerciseId.entries());
+  }
+
+  async getLatestWorkingSetByTemplateExerciseIds(
+    templateExerciseIds: string[]
+  ): Promise<Record<string, LatestWorkingSet>> {
+    if (templateExerciseIds.length === 0) {
+      return {};
+    }
+
+    const placeholders = templateExerciseIds.map(() => '?').join(', ');
+    const rows = await this.database.getAllAsync<LatestWorkingSetRow>(
+      `SELECT
+         el.template_exercise_id,
+         el.id AS exercise_log_id,
+         wl.id AS workout_log_id,
+         wl.completed_at,
+         es.id AS set_id,
+         es.set_index,
+         es.weight_text,
+         es.reps_text
+       FROM exercise_logs el
+       INNER JOIN workout_logs wl ON wl.id = el.workout_log_id
+       INNER JOIN exercise_sets es ON es.exercise_log_id = el.id
+       WHERE el.template_exercise_id IN (${placeholders})
+         AND wl.status = 'completed'
+         AND wl.completed_at IS NOT NULL
+         AND es.set_type = 'working'
+         AND NOT EXISTS (
+           SELECT 1
+           FROM exercise_logs newer
+           INNER JOIN workout_logs newer_workout ON newer_workout.id = newer.workout_log_id
+           INNER JOIN exercise_sets newer_set ON newer_set.exercise_log_id = newer.id
+           WHERE newer.template_exercise_id = el.template_exercise_id
+             AND newer_workout.status = 'completed'
+             AND newer_workout.completed_at IS NOT NULL
+             AND newer_set.set_type = 'working'
+             AND (
+               newer_workout.completed_at > wl.completed_at
+               OR (newer_workout.completed_at = wl.completed_at AND newer.id > el.id)
+               OR (
+                 newer_workout.completed_at = wl.completed_at
+                 AND newer.id = el.id
+                 AND newer_set.set_index > es.set_index
+               )
+             )
+         )
+       ORDER BY wl.completed_at DESC, el.id DESC, es.set_index DESC, es.id DESC;`,
+      ...templateExerciseIds
+    );
+
+    const latestWorkingSetByTemplateExerciseId = new Map<string, LatestWorkingSet>();
+
+    for (const row of rows) {
+      if (latestWorkingSetByTemplateExerciseId.has(row.template_exercise_id)) {
+        continue;
+      }
+
+      latestWorkingSetByTemplateExerciseId.set(row.template_exercise_id, {
+        templateExerciseId: row.template_exercise_id,
+        exerciseLogId: row.exercise_log_id,
+        workoutLogId: row.workout_log_id,
+        completedAt: row.completed_at,
+        setId: row.set_id,
+        setIndex: row.set_index,
+        weightText: row.weight_text,
+        repsText: row.reps_text,
+      });
+    }
+
+    return Object.fromEntries(latestWorkingSetByTemplateExerciseId.entries());
   }
 }

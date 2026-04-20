@@ -12,6 +12,7 @@ export default function WorkoutLoggerRoute() {
     isLoading,
     isSaving,
     latestPerformanceByExerciseId,
+    progressionSuggestionByExerciseId,
     error,
     saveError,
     addSet,
@@ -30,6 +31,7 @@ export default function WorkoutLoggerRoute() {
       isLoading={isLoading}
       isSaving={isSaving}
       latestPerformanceByExerciseId={latestPerformanceByExerciseId}
+      progressionSuggestionByExerciseId={progressionSuggestionByExerciseId}
       saveError={saveError}
       template={template}
       onAddSet={addSet}

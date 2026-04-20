@@ -5,6 +5,7 @@ import { Colors } from '@/constants/theme';
 import type { LatestExercisePerformance } from '@/db/repositories/exercise-log-repository';
 import type { WorkoutLoggerExerciseDraft } from '@/hooks/use-workout-logger-screen';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import type { ProgressionSuggestion } from '@/lib/progression/get-progression-suggestion';
 
 import { ExerciseSetRow } from './exercise-set-row';
 
@@ -18,6 +19,7 @@ type ExerciseLogCardProps = {
     surface: string;
     surfaceMuted: string;
   };
+  progressionSuggestion: ProgressionSuggestion | null;
   onAddSet: () => void;
   onOpenHistory: () => void;
   onToggleExerciseNote: () => void;
@@ -34,6 +36,7 @@ export function ExerciseLogCard({
   exercise,
   latestPerformance,
   palette,
+  progressionSuggestion,
   onAddSet,
   onOpenHistory,
   onToggleExerciseNote,
@@ -89,6 +92,24 @@ export function ExerciseLogCard({
                 Includes notes
               </ThemedText>
             ) : null}
+          </View>
+        ) : null}
+
+        {progressionSuggestion ? (
+          <View
+            style={[
+              styles.suggestionBlock,
+              {
+                backgroundColor: palette.surfaceMuted,
+                borderColor: palette.border,
+              },
+            ]}>
+            <ThemedText style={[styles.suggestionText, { color: theme.text }]}>
+              Suggestion: {progressionSuggestion.label}
+            </ThemedText>
+            <ThemedText style={[styles.suggestionMeta, { color: palette.muted }]}>
+              Target {progressionSuggestion.targetRepRangeText}
+            </ThemedText>
           </View>
         ) : null}
       </View>
@@ -222,6 +243,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     textAlignVertical: 'top',
+  },
+  suggestionBlock: {
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 2,
+    padding: 12,
+  },
+  suggestionMeta: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  suggestionText: {
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 20,
   },
   setList: {
     gap: 12,

@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
 import { useIsFocused } from '@react-navigation/native';
+import { useEffect, useState } from 'react';
 
+import { getProgressionConfig } from '@/data/progression-defaults';
 import { bootstrapDatabase } from '@/db/bootstrap';
 import {
   ExerciseLogRepository,
@@ -12,8 +13,9 @@ import type {
   ActiveTemplateExercise,
   ActiveWorkoutTemplateDetail,
 } from '@/db/repositories/template-repository';
+import { getProgressionSuggestion, type ProgressionSuggestion } from '@/lib/progression/get-progression-suggestion';
 
-export const SET_TYPE_OPTIONS = ['working', 'drop', 'burnout', 'warmup'] as const;
+export const SET_TYPE_OPTIONS = ['working','burnout', 'warmup'] as const;
 
 export type SetTypeOption = (typeof SET_TYPE_OPTIONS)[number];
 
@@ -46,6 +48,7 @@ type UseWorkoutLoggerScreenResult = {
   isLoading: boolean;
   isSaving: boolean;
   latestPerformanceByExerciseId: Record<string, LatestExercisePerformance>;
+  progressionSuggestionByExerciseId: Record<string, ProgressionSuggestion>;
   saveError: string | null;
   template: ActiveWorkoutTemplateDetail | null;
   addSet: (exerciseId: string) => void;
@@ -98,6 +101,37 @@ function isValidSetDraft(set: WorkoutLoggerSetDraft): boolean {
   return set.weightText.trim().length > 0 && set.repsText.trim().length > 0;
 }
 
+function buildProgressionSuggestionByExerciseId(
+  templateExercises: ActiveTemplateExercise[],
+  latestWorkingSetByExerciseId: Record<
+    string,
+    {
+      repsText: string;
+    }
+  >
+): Record<string, ProgressionSuggestion> {
+  const suggestions: Record<string, ProgressionSuggestion> = {};
+
+  for (const exercise of templateExercises) {
+    const latestWorkingSet = latestWorkingSetByExerciseId[exercise.id];
+
+    if (!latestWorkingSet) {
+      continue;
+    }
+
+    const suggestion = getProgressionSuggestion({
+      config: getProgressionConfig(exercise.id),
+      repsText: latestWorkingSet.repsText,
+    });
+
+    if (suggestion) {
+      suggestions[exercise.id] = suggestion;
+    }
+  }
+
+  return suggestions;
+}
+
 export function useWorkoutLoggerScreen(templateId: string): UseWorkoutLoggerScreenResult {
   const isFocused = useIsFocused();
   const [template, setTemplate] = useState<ActiveWorkoutTemplateDetail | null>(null);
@@ -106,6 +140,9 @@ export function useWorkoutLoggerScreen(templateId: string): UseWorkoutLoggerScre
   const [isSaving, setIsSaving] = useState(false);
   const [latestPerformanceByExerciseId, setLatestPerformanceByExerciseId] = useState<
     Record<string, LatestExercisePerformance>
+  >({});
+  const [progressionSuggestionByExerciseId, setProgressionSuggestionByExerciseId] = useState<
+    Record<string, ProgressionSuggestion>
   >({});
   const [error, setError] = useState<Error | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -136,13 +173,16 @@ export function useWorkoutLoggerScreen(templateId: string): UseWorkoutLoggerScre
           setTemplate(null);
           setExercises([]);
           setLatestPerformanceByExerciseId({});
+          setProgressionSuggestionByExerciseId({});
           setError(new Error('Workout template not found.'));
           return;
         }
 
-        const latestPerformance = await exerciseLogRepository.getLatestPerformanceByTemplateExerciseIds(
-          loadedTemplate.exercises.map((exercise) => exercise.id)
-        );
+        const templateExerciseIds = loadedTemplate.exercises.map((exercise) => exercise.id);
+        const [latestPerformance, latestWorkingSetByExerciseId] = await Promise.all([
+          exerciseLogRepository.getLatestPerformanceByTemplateExerciseIds(templateExerciseIds),
+          exerciseLogRepository.getLatestWorkingSetByTemplateExerciseIds(templateExerciseIds),
+        ]);
 
         if (!isMounted) {
           return;
@@ -151,11 +191,18 @@ export function useWorkoutLoggerScreen(templateId: string): UseWorkoutLoggerScre
         setTemplate(loadedTemplate);
         setExercises(loadedTemplate.exercises.map(createExerciseDraft));
         setLatestPerformanceByExerciseId(latestPerformance);
+        setProgressionSuggestionByExerciseId(
+          buildProgressionSuggestionByExerciseId(
+            loadedTemplate.exercises,
+            latestWorkingSetByExerciseId
+          )
+        );
       } catch (loadError) {
         if (!isMounted) {
           return;
         }
 
+        setProgressionSuggestionByExerciseId({});
         setError(
           loadError instanceof Error ? loadError : new Error('Unable to load the workout logger.')
         );
@@ -316,6 +363,7 @@ export function useWorkoutLoggerScreen(templateId: string): UseWorkoutLoggerScre
     isLoading,
     isSaving,
     latestPerformanceByExerciseId,
+    progressionSuggestionByExerciseId,
     error,
     saveError,
     addSet,

@@ -7,6 +7,7 @@ import type { LatestExercisePerformance } from '@/db/repositories/exercise-log-r
 import type { ActiveWorkoutTemplateDetail } from '@/db/repositories/template-repository';
 import type { WorkoutLoggerExerciseDraft } from '@/hooks/use-workout-logger-screen';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import type { ProgressionSuggestion } from '@/lib/progression/get-progression-suggestion';
 
 import { ExerciseLogCard } from './exercise-log-card';
 
@@ -16,6 +17,7 @@ type WorkoutLoggerScreenContentProps = {
   isLoading: boolean;
   isSaving: boolean;
   latestPerformanceByExerciseId: Record<string, LatestExercisePerformance>;
+  progressionSuggestionByExerciseId: Record<string, ProgressionSuggestion>;
   saveError: string | null;
   template: ActiveWorkoutTemplateDetail | null;
   onAddSet: (exerciseId: string) => void;
@@ -67,6 +69,7 @@ export function WorkoutLoggerScreenContent({
   isLoading,
   isSaving,
   latestPerformanceByExerciseId,
+  progressionSuggestionByExerciseId,
   saveError,
   template,
   onAddSet,
@@ -161,6 +164,9 @@ export function WorkoutLoggerScreenContent({
               key={exercise.id}
               exercise={exercise}
               latestPerformance={latestPerformanceByExerciseId[exercise.templateExerciseId] ?? null}
+              progressionSuggestion={
+                progressionSuggestionByExerciseId[exercise.templateExerciseId] ?? null
+              }
               palette={palette}
               onAddSet={() => onAddSet(exercise.id)}
               onOpenHistory={() => onOpenHistory(exercise.templateExerciseId)}
