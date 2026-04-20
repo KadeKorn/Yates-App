@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 
 import { ExerciseHistoryScreenContent } from '@/components/history/exercise-history-screen-content';
 import { useExerciseHistoryScreen } from '@/hooks/use-exercise-history-screen';
@@ -10,10 +10,27 @@ export default function ExerciseHistoryRoute() {
   const { error, historyEntries, isLoading } = useExerciseHistoryScreen(templateExerciseId);
 
   return (
-    <ExerciseHistoryScreenContent
-      error={error}
-      historyEntries={historyEntries}
-      isLoading={isLoading}
-    />
+    <>
+      <Stack.Screen
+        options={{
+          title: 'Exercise History',
+          headerShadowVisible: false,
+          headerStyle: {
+            backgroundColor: '#0F1216',
+          },
+          headerTintColor: '#F3F5F7',
+          headerTitleStyle: {
+            color: '#F3F5F7',
+            fontSize: 18,
+            fontWeight: '700',
+          },
+        }}
+      />
+      <ExerciseHistoryScreenContent
+        error={error}
+        historyEntries={historyEntries}
+        isLoading={isLoading}
+      />
+    </>
   );
 }

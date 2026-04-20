@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 
 import { WorkoutLoggerScreenContent } from '@/components/workout-logger/workout-logger-screen-content';
 import { useWorkoutLoggerScreen } from '@/hooks/use-workout-logger-screen';
@@ -25,34 +25,52 @@ export default function WorkoutLoggerRoute() {
   } = useWorkoutLoggerScreen(templateId);
 
   return (
-    <WorkoutLoggerScreenContent
-      error={error}
-      exercises={exercises}
-      isLoading={isLoading}
-      isSaving={isSaving}
-      latestPerformanceByExerciseId={latestPerformanceByExerciseId}
-      progressionSuggestionByExerciseId={progressionSuggestionByExerciseId}
-      saveError={saveError}
-      template={template}
-      onAddSet={addSet}
-      onDismissSaveError={dismissSaveError}
-      onOpenHistory={(templateExerciseId) =>
-        router.push({
-          pathname: '/history/[templateExerciseId]',
-          params: { templateExerciseId },
-        })
-      }
-      onSaveWorkout={() =>
-        void saveWorkout({
-          onComplete: () => {
-            router.replace('/(tabs)');
+    <>
+      <Stack.Screen
+        options={{
+          title: 'Workout Logger',
+          headerBackTitle: 'Logger',
+          headerShadowVisible: false,
+          headerStyle: {
+            backgroundColor: '#0F1216',
           },
-        })
-      }
-      onToggleExerciseNote={toggleExerciseNote}
-      onToggleSetNote={toggleSetNote}
-      onUpdateExerciseNotes={updateExerciseNotes}
-      onUpdateSetField={updateSetField}
-    />
+          headerTintColor: '#F3F5F7',
+          headerTitleStyle: {
+            color: '#F3F5F7',
+            fontSize: 18,
+            fontWeight: '700',
+          },
+        }}
+      />
+      <WorkoutLoggerScreenContent
+        error={error}
+        exercises={exercises}
+        isLoading={isLoading}
+        isSaving={isSaving}
+        latestPerformanceByExerciseId={latestPerformanceByExerciseId}
+        progressionSuggestionByExerciseId={progressionSuggestionByExerciseId}
+        saveError={saveError}
+        template={template}
+        onAddSet={addSet}
+        onDismissSaveError={dismissSaveError}
+        onOpenHistory={(templateExerciseId) =>
+          router.push({
+            pathname: '/history/[templateExerciseId]',
+            params: { templateExerciseId },
+          })
+        }
+        onSaveWorkout={() =>
+          void saveWorkout({
+            onComplete: () => {
+              router.replace('/(tabs)');
+            },
+          })
+        }
+        onToggleExerciseNote={toggleExerciseNote}
+        onToggleSetNote={toggleSetNote}
+        onUpdateExerciseNotes={updateExerciseNotes}
+        onUpdateSetField={updateSetField}
+      />
+    </>
   );
 }

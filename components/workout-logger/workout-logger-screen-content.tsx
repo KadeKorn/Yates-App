@@ -55,10 +55,10 @@ function getPalette(colorScheme: 'light' | 'dark'): LoggerPalette {
   }
 
   return {
-    surface: '#1C1F22',
-    surfaceMuted: '#17191C',
-    border: '#2B3035',
-    muted: '#8D98A3',
+    surface: '#171B20',
+    surfaceMuted: '#11151A',
+    border: '#2A3138',
+    muted: '#93A0AB',
     accent: '#D7F75B',
   };
 }
@@ -115,6 +115,9 @@ export function WorkoutLoggerScreenContent({
         showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View style={styles.headerText}>
+            <ThemedText style={[styles.eyebrow, { color: palette.accent }]}>
+              Workout Logger
+            </ThemedText>
             <ThemedText type="title" style={styles.title}>
               {template.name}
             </ThemedText>
@@ -207,19 +210,26 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   content: {
-    gap: 18,
-    paddingBottom: 32,
-    paddingHorizontal: 20,
-    paddingTop: 24,
+    gap: 14,
+    paddingBottom: 28,
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   exerciseList: {
-    gap: 16,
+    gap: 12,
   },
   header: {
-    gap: 16,
+    gap: 12,
   },
   headerText: {
-    gap: 8,
+    gap: 6,
+  },
+  eyebrow: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.9,
+    lineHeight: 16,
+    textTransform: 'uppercase',
   },
   screen: {
     flex: 1,
@@ -228,18 +238,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   supportingText: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 14,
+    lineHeight: 20,
   },
   title: {
-    fontSize: 34,
-    lineHeight: 38,
+    fontSize: 30,
+    lineHeight: 34,
   },
   validationCard: {
     borderRadius: 16,
     borderWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
   validationText: {
     fontSize: 14,

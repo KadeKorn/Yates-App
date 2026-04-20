@@ -2,9 +2,9 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import type { SetTypeOption, WorkoutLoggerSetDraft } from '@/hooks/use-workout-logger-screen';
 import { SET_TYPE_OPTIONS } from '@/hooks/use-workout-logger-screen';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 
 type ExerciseSetRowProps = {
   palette: {
@@ -26,8 +26,6 @@ function getSetTypeLabel(setType: SetTypeOption): string {
   switch (setType) {
     case 'warmup':
       return 'Warmup';
-    case 'drop':
-      return 'Drop';
     case 'burnout':
       return 'Burnout';
     default:
@@ -156,8 +154,10 @@ const styles = StyleSheet.create({
   chip: {
     borderRadius: 999,
     borderWidth: 1,
+    minHeight: 38,
+    justifyContent: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 7,
   },
   chipRow: {
     flexDirection: 'row',
@@ -172,8 +172,8 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: 16,
     borderWidth: 1,
-    gap: 12,
-    padding: 14,
+    gap: 10,
+    padding: 12,
   },
   fieldBlock: {
     flex: 1,
@@ -187,16 +187,16 @@ const styles = StyleSheet.create({
   },
   fieldRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
   },
   input: {
     borderRadius: 12,
     borderWidth: 1,
     fontSize: 16,
     lineHeight: 22,
-    minHeight: 48,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    minHeight: 46,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
   },
   noteInput: {
     borderRadius: 12,
@@ -210,6 +210,8 @@ const styles = StyleSheet.create({
   },
   noteToggle: {
     alignSelf: 'flex-start',
+    minHeight: 36,
+    justifyContent: 'center',
   },
   noteToggleText: {
     fontSize: 14,

@@ -32,10 +32,10 @@ function getPalette(colorScheme: 'light' | 'dark'): HistoryPalette {
   }
 
   return {
-    surface: '#1C1F22',
-    surfaceMuted: '#17191C',
-    border: '#2B3035',
-    muted: '#8D98A3',
+    surface: '#171B20',
+    surfaceMuted: '#11151A',
+    border: '#2A3138',
+    muted: '#93A0AB',
     accent: '#D7F75B',
   };
 }
@@ -102,6 +102,9 @@ export function ExerciseHistoryScreenContent({
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
+          <ThemedText style={[styles.eyebrow, { color: palette.accent }]}>
+            Exercise History
+          </ThemedText>
           <ThemedText type="title" style={styles.title}>
             {latestEntry?.exerciseNameSnapshot ?? 'Exercise History'}
           </ThemedText>
@@ -188,22 +191,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   content: {
-    gap: 18,
-    paddingBottom: 32,
-    paddingHorizontal: 20,
-    paddingTop: 24,
+    gap: 14,
+    paddingBottom: 28,
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   emptyState: {
     borderRadius: 18,
     borderWidth: 1,
     gap: 8,
-    padding: 18,
+    padding: 16,
+  },
+  eyebrow: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.9,
+    lineHeight: 16,
+    textTransform: 'uppercase',
   },
   entryCard: {
     borderRadius: 18,
     borderWidth: 1,
-    gap: 14,
-    padding: 18,
+    gap: 12,
+    padding: 16,
   },
   entryDate: {
     fontSize: 13,
@@ -213,23 +223,23 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   entryHeader: {
-    gap: 6,
+    gap: 4,
   },
   entryList: {
-    gap: 14,
+    gap: 12,
   },
   entryTitle: {
     fontSize: 20,
     lineHeight: 26,
   },
   header: {
-    gap: 8,
+    gap: 6,
   },
   noteBlock: {
     borderRadius: 14,
     borderWidth: 1,
     gap: 6,
-    padding: 14,
+    padding: 12,
   },
   noteLabel: {
     fontSize: 12,
@@ -246,7 +256,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   setList: {
-    gap: 6,
+    gap: 4,
   },
   setText: {
     fontSize: 15,
@@ -256,11 +266,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   supportingText: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 14,
+    lineHeight: 20,
   },
   title: {
-    fontSize: 34,
-    lineHeight: 38,
+    fontSize: 30,
+    lineHeight: 34,
   },
 });

@@ -49,10 +49,10 @@ function getPalette(colorScheme: 'light' | 'dark'): HomePalette {
   }
 
   return {
-    surface: '#1C1F22',
-    surfaceMuted: '#17191C',
-    border: '#2B3035',
-    muted: '#8D98A3',
+    surface: '#171B20',
+    surfaceMuted: '#11151A',
+    border: '#2A3138',
+    muted: '#93A0AB',
     accent: '#D7F75B',
   };
 }
@@ -97,11 +97,11 @@ export function HomeScreenContent({
         showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior="automatic">
         <View style={styles.header}>
-          <ThemedText type="title" style={styles.title}>
-            HIT Log
-          </ThemedText>
           <ThemedText style={[styles.caption, { color: palette.muted }]}>
             Home
+          </ThemedText>
+          <ThemedText type="title" style={styles.title}>
+            HIT Log
           </ThemedText>
         </View>
 
@@ -209,15 +209,15 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 24,
+    paddingTop: 20,
     paddingBottom: 32,
-    gap: 18,
+    gap: 16,
   },
   errorText: {
     textAlign: 'center',
   },
   header: {
-    gap: 6,
+    gap: 4,
   },
   loadingContainer: {
     flex: 1,
@@ -232,9 +232,9 @@ const styles = StyleSheet.create({
   },
   nextUpCard: {
     borderWidth: 1,
-    borderRadius: 20,
-    padding: 18,
-    gap: 8,
+    borderRadius: 18,
+    padding: 16,
+    gap: 6,
   },
   nextUpName: {
     fontSize: 24,
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     gap: 4,
-    marginTop: 4,
+    marginTop: 2,
   },
   sectionLabel: {
     fontSize: 12,
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     lineHeight: 28,
   },
   summaryBlock: {
-    gap: 8,
+    gap: 6,
   },
   summaryMeta: {
     fontSize: 13,
@@ -276,8 +276,8 @@ const styles = StyleSheet.create({
   templateCard: {
     borderWidth: 1,
     borderRadius: 18,
-    padding: 16,
-    gap: 12,
+    padding: 15,
+    gap: 10,
   },
   templateCode: {
     fontSize: 12,

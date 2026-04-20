@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
+import { Colors } from '@/constants/theme';
 import { getDatabaseClient } from '@/db/client';
 import { ExerciseLogRepository } from '@/db/repositories/exercise-log-repository';
 import { TemplateRepository } from '@/db/repositories/template-repository';
@@ -18,6 +19,21 @@ export const unstable_settings = {
 export default function RootLayout() {
   const { error, isReady } = useDatabaseBootstrap();
   const colorScheme = useColorScheme();
+  const navigationTheme =
+    colorScheme === 'dark'
+      ? {
+          ...DarkTheme,
+          colors: {
+            ...DarkTheme.colors,
+            background: Colors.dark.background,
+            border: '#262C33',
+            card: '#11151A',
+            notification: Colors.dark.tint,
+            primary: Colors.dark.tint,
+            text: Colors.dark.text,
+          },
+        }
+      : DefaultTheme;
 
   useEffect(() => {
     if (!isReady || error) return;
@@ -58,12 +74,12 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={navigationTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
-      <StatusBar style="auto" />
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
     </ThemeProvider>
   );
 }

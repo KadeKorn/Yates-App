@@ -67,49 +67,58 @@ export function ExerciseLogCard({
           </ThemedText>
         </View>
 
-        {latestPerformance ? (
-          <View
-            style={[
-              styles.lastTimeBlock,
-              {
-                backgroundColor: palette.surfaceMuted,
-                borderColor: palette.border,
-              },
-            ]}>
-            <ThemedText style={[styles.lastTimeLabel, { color: palette.accent }]}>
-              Last time
-            </ThemedText>
-            <ThemedText style={[styles.lastTimeDate, { color: palette.muted }]}>
-              {formatCompletedDate(latestPerformance.completedAt)}
-            </ThemedText>
-            {latestSets.map((set) => (
-              <ThemedText key={set.id} style={[styles.lastTimeText, { color: theme.text }]}>
-                {formatCompactSetLine(set)}
-              </ThemedText>
-            ))}
-            {latestPerformance.notes ? (
-              <ThemedText style={[styles.lastTimeMeta, { color: palette.muted }]}>
-                Includes notes
-              </ThemedText>
+        {latestPerformance || progressionSuggestion ? (
+          <View style={styles.metaRow}>
+            {latestPerformance ? (
+              <View
+                style={[
+                  styles.lastTimeBlock,
+                  {
+                    backgroundColor: palette.surfaceMuted,
+                    borderColor: palette.border,
+                  },
+                ]}>
+                <View style={styles.metaHeader}>
+                  <ThemedText style={[styles.lastTimeLabel, { color: palette.accent }]}>
+                    Last time
+                  </ThemedText>
+                  <ThemedText style={[styles.lastTimeDate, { color: palette.muted }]}>
+                    {formatCompletedDate(latestPerformance.completedAt)}
+                  </ThemedText>
+                </View>
+                {latestSets.map((set) => (
+                  <ThemedText key={set.id} style={[styles.lastTimeText, { color: theme.text }]}>
+                    {formatCompactSetLine(set)}
+                  </ThemedText>
+                ))}
+                {latestPerformance.notes ? (
+                  <ThemedText style={[styles.lastTimeMeta, { color: palette.muted }]}>
+                    Includes notes
+                  </ThemedText>
+                ) : null}
+              </View>
             ) : null}
-          </View>
-        ) : null}
 
-        {progressionSuggestion ? (
-          <View
-            style={[
-              styles.suggestionBlock,
-              {
-                backgroundColor: palette.surfaceMuted,
-                borderColor: palette.border,
-              },
-            ]}>
-            <ThemedText style={[styles.suggestionText, { color: theme.text }]}>
-              Suggestion: {progressionSuggestion.label}
-            </ThemedText>
-            <ThemedText style={[styles.suggestionMeta, { color: palette.muted }]}>
-              Target {progressionSuggestion.targetRepRangeText}
-            </ThemedText>
+            {progressionSuggestion ? (
+              <View
+                style={[
+                  styles.suggestionBlock,
+                  {
+                    backgroundColor: palette.surfaceMuted,
+                    borderColor: palette.border,
+                  },
+                ]}>
+                <ThemedText style={[styles.lastTimeLabel, { color: palette.accent }]}>
+                  Suggestion
+                </ThemedText>
+                <ThemedText style={[styles.suggestionText, { color: theme.text }]}>
+                  {progressionSuggestion.label}
+                </ThemedText>
+                <ThemedText style={[styles.suggestionMeta, { color: palette.muted }]}>
+                  Target {progressionSuggestion.targetRepRangeText}
+                </ThemedText>
+              </View>
+            ) : null}
           </View>
         ) : null}
       </View>
@@ -127,18 +136,42 @@ export function ExerciseLogCard({
       </View>
 
       <View style={styles.actionRow}>
-        <Pressable accessibilityRole="button" onPress={onAddSet} style={styles.actionButton}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onAddSet}
+          style={[
+            styles.actionButton,
+            {
+              backgroundColor: palette.surfaceMuted,
+              borderColor: palette.border,
+            },
+          ]}>
           <ThemedText style={[styles.actionText, { color: palette.accent }]}>Add set</ThemedText>
         </Pressable>
 
-        <Pressable accessibilityRole="button" onPress={onOpenHistory} style={styles.actionButton}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onOpenHistory}
+          style={[
+            styles.actionButton,
+            {
+              backgroundColor: palette.surfaceMuted,
+              borderColor: palette.border,
+            },
+          ]}>
           <ThemedText style={[styles.actionText, { color: palette.accent }]}>View history</ThemedText>
         </Pressable>
 
         <Pressable
           accessibilityRole="button"
           onPress={onToggleExerciseNote}
-          style={styles.actionButton}>
+          style={[
+            styles.actionButton,
+            {
+              backgroundColor: palette.surfaceMuted,
+              borderColor: palette.border,
+            },
+          ]}>
           <ThemedText style={[styles.actionText, { color: palette.accent }]}>
             {exercise.isNoteExpanded || exercise.notes.trim() ? 'Hide exercise note' : 'Add exercise note'}
           </ThemedText>
@@ -189,35 +222,43 @@ function formatCompactSetLine(set: LatestExercisePerformance['sets'][number]): s
 const styles = StyleSheet.create({
   actionButton: {
     alignSelf: 'flex-start',
+    borderRadius: 999,
+    borderWidth: 1,
+    minHeight: 40,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   actionRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 16,
+    gap: 10,
   },
   actionText: {
     fontSize: 14,
     fontWeight: '600',
-    lineHeight: 20,
+    lineHeight: 18,
   },
   card: {
     borderRadius: 20,
     borderWidth: 1,
-    gap: 16,
-    padding: 18,
+    gap: 14,
+    padding: 16,
   },
   header: {
-    gap: 8,
+    gap: 10,
   },
   lastTimeBlock: {
+    flex: 1,
     borderRadius: 14,
     borderWidth: 1,
     gap: 4,
-    padding: 12,
+    minWidth: 0,
+    padding: 10,
   },
   lastTimeDate: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 16,
   },
   lastTimeLabel: {
     fontSize: 12,
@@ -232,7 +273,16 @@ const styles = StyleSheet.create({
   },
   lastTimeText: {
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 18,
+  },
+  metaHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  metaRow: {
+    gap: 8,
   },
   noteInput: {
     borderRadius: 12,
@@ -245,10 +295,12 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   suggestionBlock: {
+    flex: 1,
     borderRadius: 14,
     borderWidth: 1,
-    gap: 2,
-    padding: 12,
+    gap: 3,
+    minWidth: 0,
+    padding: 10,
   },
   suggestionMeta: {
     fontSize: 12,
@@ -257,18 +309,18 @@ const styles = StyleSheet.create({
   suggestionText: {
     fontSize: 14,
     fontWeight: '700',
-    lineHeight: 20,
+    lineHeight: 18,
   },
   setList: {
-    gap: 12,
+    gap: 10,
   },
   supportingText: {
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 18,
   },
   title: {
-    fontSize: 24,
-    lineHeight: 28,
+    fontSize: 22,
+    lineHeight: 26,
   },
   titleBlock: {
     gap: 4,
