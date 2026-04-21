@@ -57,9 +57,9 @@ export const planCTemplateSeeds: readonly SeedTemplateRecord[] = [
   },
   {
     id: PLAN_C_TEMPLATE_IDS.day5,
-    code: 'day5',
-    name: 'Day 5 - Shoulders + Arms',
-    orderIndex: 5,
+    code: 'day3',
+    name: 'Day 3 - Shoulders + Arms',
+    orderIndex: 3,
     isActive: true,
   },
 ] as const;

@@ -101,7 +101,7 @@ export function HomeScreenContent({
             Home
           </ThemedText>
           <ThemedText type="title" style={styles.title}>
-            HIT Log
+            Yates Log
           </ThemedText>
         </View>
 
