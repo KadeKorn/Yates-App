@@ -1,5 +1,5 @@
 import { useIsFocused } from '@react-navigation/native';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { getProgressionConfig } from '@/data/progression-defaults';
 import { bootstrapDatabase } from '@/db/bootstrap';
@@ -13,6 +13,10 @@ import type {
   ActiveTemplateExercise,
   ActiveWorkoutTemplateDetail,
 } from '@/db/repositories/template-repository';
+import type {
+  SaveWorkoutDraftInput,
+  WorkoutLoggerDraft,
+} from '@/db/repositories/workout-logger-repository';
 import { getProgressionSuggestion, type ProgressionSuggestion } from '@/lib/progression/get-progression-suggestion';
 
 export const SET_TYPE_OPTIONS = ['working','burnout', 'warmup'] as const;
@@ -54,6 +58,7 @@ type UseWorkoutLoggerScreenResult = {
   addSet: (exerciseId: string) => void;
   dismissSaveError: () => void;
   removeSet: (exerciseId: string, setId: string) => void;
+  flushDraftSave: () => Promise<void>;
   saveWorkout: (params?: SaveWorkoutParams) => Promise<void>;
   toggleExerciseNote: (exerciseId: string) => void;
   toggleSetNote: (exerciseId: string, setId: string) => void;
@@ -93,13 +98,126 @@ function createExerciseDraft(exercise: ActiveTemplateExercise): WorkoutLoggerExe
   };
 }
 
+function createSetDraftFromSavedSet(
+  set: WorkoutLoggerDraft['exercises'][number]['sets'][number]
+): WorkoutLoggerSetDraft {
+  return {
+    id: createDraftId('set-draft'),
+    setType: SET_TYPE_OPTIONS.includes(set.setType as SetTypeOption)
+      ? (set.setType as SetTypeOption)
+      : 'working',
+    weightText: set.weightText,
+    repsText: set.repsText,
+    note: set.note ?? '',
+    isNoteExpanded: false,
+  };
+}
+
+function createExerciseDraftFromTemplateAndDraft(
+  exercise: ActiveTemplateExercise,
+  draftExercise: WorkoutLoggerDraft['exercises'][number] | null
+): WorkoutLoggerExerciseDraft {
+  if (!draftExercise) {
+    return createExerciseDraft(exercise);
+  }
+
+  const restoredSets = draftExercise.sets
+    .sort((left, right) => left.setIndex - right.setIndex)
+    .map(createSetDraftFromSavedSet);
+
+  return {
+    id: createDraftId('exercise-draft'),
+    templateExerciseId: exercise.id,
+    name: exercise.name,
+    orderIndex: exercise.orderIndex,
+    notes: draftExercise.notes ?? '',
+    isNoteExpanded: false,
+    sets: restoredSets.length > 0 ? restoredSets : [createEmptySetDraft()],
+  };
+}
+
+function createExerciseDraftsFromTemplateAndDraft(
+  templateExercises: ActiveTemplateExercise[],
+  draft: WorkoutLoggerDraft | null
+): WorkoutLoggerExerciseDraft[] {
+  const draftExerciseByTemplateExerciseId = new Map(
+    draft?.exercises.map((exercise) => [exercise.templateExerciseId, exercise]) ?? []
+  );
+
+  return templateExercises.map((exercise) =>
+    createExerciseDraftFromTemplateAndDraft(
+      exercise,
+      draftExerciseByTemplateExerciseId.get(exercise.id) ?? null
+    )
+  );
+}
+
 function normalizeOptionalText(value: string): string | null {
   const normalizedValue = value.trim();
   return normalizedValue ? normalizedValue : null;
 }
 
+function hasMeaningfulSetData(set: WorkoutLoggerSetDraft): boolean {
+  return (
+    set.weightText.trim().length > 0 ||
+    set.repsText.trim().length > 0 ||
+    set.note.trim().length > 0
+  );
+}
+
+function hasMeaningfulExerciseData(exercise: WorkoutLoggerExerciseDraft): boolean {
+  return (
+    exercise.notes.trim().length > 0 ||
+    exercise.sets.some(hasMeaningfulSetData)
+  );
+}
+
+function hasMeaningfulWorkoutData(exercises: WorkoutLoggerExerciseDraft[]): boolean {
+  return exercises.some(hasMeaningfulExerciseData);
+}
+
 function isValidSetDraft(set: WorkoutLoggerSetDraft): boolean {
   return set.weightText.trim().length > 0 && set.repsText.trim().length > 0;
+}
+
+function buildDraftSaveExercises(
+  exercises: WorkoutLoggerExerciseDraft[]
+): SaveWorkoutDraftInput['exercises'] {
+  return exercises
+    .map((exercise) => ({
+      exerciseName: exercise.name,
+      notes: normalizeOptionalText(exercise.notes),
+      orderIndex: exercise.orderIndex,
+      templateExerciseId: exercise.templateExerciseId,
+      sets: exercise.sets
+        .filter(hasMeaningfulSetData)
+        .map((set) => ({
+          setType: set.setType,
+          weightText: set.weightText,
+          repsText: set.repsText,
+          note: normalizeOptionalText(set.note),
+        })),
+    }))
+    .filter((exercise) => exercise.notes || exercise.sets.length > 0);
+}
+
+function buildCompletedSaveExercises(exercises: WorkoutLoggerExerciseDraft[]) {
+  return exercises
+    .map((exercise) => ({
+      exerciseName: exercise.name,
+      notes: normalizeOptionalText(exercise.notes),
+      orderIndex: exercise.orderIndex,
+      templateExerciseId: exercise.templateExerciseId,
+      sets: exercise.sets
+        .filter(isValidSetDraft)
+        .map((set) => ({
+          setType: set.setType,
+          weightText: set.weightText.trim(),
+          repsText: set.repsText.trim(),
+          note: normalizeOptionalText(set.note),
+        })),
+    }))
+    .filter((exercise) => exercise.sets.length > 0);
 }
 
 function buildProgressionSuggestionByExerciseId(
@@ -147,6 +265,20 @@ export function useWorkoutLoggerScreen(templateId: string): UseWorkoutLoggerScre
   >({});
   const [error, setError] = useState<Error | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const autosaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingDraftSaveRef = useRef<Promise<void> | null>(null);
+  const skipNextAutosaveRef = useRef(true);
+  const isCompletingWorkoutRef = useRef(false);
+  const templateRef = useRef<ActiveWorkoutTemplateDetail | null>(null);
+  const exercisesRef = useRef<WorkoutLoggerExerciseDraft[]>([]);
+
+  useEffect(() => {
+    templateRef.current = template;
+  }, [template]);
+
+  useEffect(() => {
+    exercisesRef.current = exercises;
+  }, [exercises]);
 
   useEffect(() => {
     if (!isFocused) {
@@ -164,6 +296,7 @@ export function useWorkoutLoggerScreen(templateId: string): UseWorkoutLoggerScre
         const database = await bootstrapDatabase();
         const templateRepository = new TemplateRepository(database);
         const exerciseLogRepository = new ExerciseLogRepository(database);
+        const workoutLoggerRepository = new WorkoutLoggerRepository(database);
         const loadedTemplate = await templateRepository.getActiveTemplateById(templateId);
 
         if (!isMounted) {
@@ -184,13 +317,16 @@ export function useWorkoutLoggerScreen(templateId: string): UseWorkoutLoggerScre
           exerciseLogRepository.getLatestPerformanceByTemplateExerciseIds(templateExerciseIds),
           exerciseLogRepository.getLatestWorkingSetByTemplateExerciseIds(templateExerciseIds),
         ]);
+        const activeDraft = await workoutLoggerRepository.getActiveDraftByTemplateId(templateId);
 
         if (!isMounted) {
           return;
         }
 
+        skipNextAutosaveRef.current = true;
+        isCompletingWorkoutRef.current = false;
         setTemplate(loadedTemplate);
-        setExercises(loadedTemplate.exercises.map(createExerciseDraft));
+        setExercises(createExerciseDraftsFromTemplateAndDraft(loadedTemplate.exercises, activeDraft));
         setLatestPerformanceByExerciseId(latestPerformance);
         setProgressionSuggestionByExerciseId(
           buildProgressionSuggestionByExerciseId(
@@ -220,6 +356,94 @@ export function useWorkoutLoggerScreen(templateId: string): UseWorkoutLoggerScre
       isMounted = false;
     };
   }, [isFocused, templateId]);
+
+  const persistDraft = useCallback(
+    async (
+      templateToSave: ActiveWorkoutTemplateDetail | null,
+      exercisesToSave: WorkoutLoggerExerciseDraft[]
+    ): Promise<void> => {
+      if (!templateToSave || isCompletingWorkoutRef.current) {
+        return;
+      }
+
+      const database = await bootstrapDatabase();
+      const workoutLoggerRepository = new WorkoutLoggerRepository(database);
+
+      if (!hasMeaningfulWorkoutData(exercisesToSave)) {
+        await workoutLoggerRepository.deleteActiveDraftByTemplateId(templateToSave.id);
+        return;
+      }
+
+      await workoutLoggerRepository.saveDraft({
+        templateId: templateToSave.id,
+        startedAt: new Date().toISOString(),
+        exercises: buildDraftSaveExercises(exercisesToSave),
+      });
+    },
+    []
+  );
+
+  const flushDraftSave = useCallback(async (): Promise<void> => {
+    if (autosaveTimeoutRef.current) {
+      clearTimeout(autosaveTimeoutRef.current);
+      autosaveTimeoutRef.current = null;
+    }
+
+    const pendingDraftSave = pendingDraftSaveRef.current;
+
+    if (pendingDraftSave) {
+      await pendingDraftSave;
+    }
+
+    if (!skipNextAutosaveRef.current) {
+      const draftSave = persistDraft(templateRef.current, exercisesRef.current).finally(() => {
+        if (pendingDraftSaveRef.current === draftSave) {
+          pendingDraftSaveRef.current = null;
+        }
+      });
+
+      pendingDraftSaveRef.current = draftSave;
+      await draftSave;
+    }
+  }, [persistDraft]);
+
+  useEffect(() => {
+    if (!template || isLoading) {
+      return;
+    }
+
+    if (skipNextAutosaveRef.current) {
+      skipNextAutosaveRef.current = false;
+      return;
+    }
+
+    if (autosaveTimeoutRef.current) {
+      clearTimeout(autosaveTimeoutRef.current);
+    }
+
+    autosaveTimeoutRef.current = setTimeout(() => {
+      autosaveTimeoutRef.current = null;
+
+      const draftSave = persistDraft(templateRef.current, exercisesRef.current)
+        .catch((draftSaveError) => {
+          console.error('Unable to autosave workout draft.', draftSaveError);
+        })
+        .finally(() => {
+          if (pendingDraftSaveRef.current === draftSave) {
+            pendingDraftSaveRef.current = null;
+          }
+        });
+
+      pendingDraftSaveRef.current = draftSave;
+    }, 650);
+
+    return () => {
+      if (autosaveTimeoutRef.current) {
+        clearTimeout(autosaveTimeoutRef.current);
+        autosaveTimeoutRef.current = null;
+      }
+    };
+  }, [exercises, isLoading, persistDraft, template]);
 
   function updateExercise(
     exerciseId: string,
@@ -325,22 +549,7 @@ export function useWorkoutLoggerScreen(templateId: string): UseWorkoutLoggerScre
       return;
     }
 
-    const exercisesToSave = exercises
-      .map((exercise) => ({
-        exerciseName: exercise.name,
-        notes: normalizeOptionalText(exercise.notes),
-        orderIndex: exercise.orderIndex,
-        templateExerciseId: exercise.templateExerciseId,
-        sets: exercise.sets
-          .filter(isValidSetDraft)
-          .map((set) => ({
-            setType: set.setType,
-            weightText: set.weightText.trim(),
-            repsText: set.repsText.trim(),
-            note: normalizeOptionalText(set.note),
-          })),
-      }))
-      .filter((exercise) => exercise.sets.length > 0);
+    const exercisesToSave = buildCompletedSaveExercises(exercises);
 
     const totalValidSets = exercisesToSave.reduce((count, exercise) => count + exercise.sets.length, 0);
 
@@ -350,8 +559,10 @@ export function useWorkoutLoggerScreen(templateId: string): UseWorkoutLoggerScre
     }
 
     try {
+      isCompletingWorkoutRef.current = true;
       setIsSaving(true);
       setSaveError(null);
+      await flushDraftSave();
 
       const database = await bootstrapDatabase();
       const workoutLoggerRepository = new WorkoutLoggerRepository(database);
@@ -375,6 +586,7 @@ export function useWorkoutLoggerScreen(templateId: string): UseWorkoutLoggerScre
       );
     } finally {
       setIsSaving(false);
+      isCompletingWorkoutRef.current = false;
     }
   }
 
@@ -389,6 +601,7 @@ export function useWorkoutLoggerScreen(templateId: string): UseWorkoutLoggerScre
     saveError,
     addSet,
     dismissSaveError,
+    flushDraftSave,
     removeSet,
     saveWorkout,
     toggleExerciseNote,
