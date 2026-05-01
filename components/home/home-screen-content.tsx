@@ -105,12 +105,23 @@ export function HomeScreenContent({
           </ThemedText>
         </View>
 
-        <ThemedView
+        <Pressable
+          accessibilityRole={nextWorkout ? 'button' : undefined}
+          accessibilityLabel={
+            nextWorkout
+              ? `Open ${nextWorkout.recommendedTemplate.name} workout logger`
+              : undefined
+          }
+          disabled={!nextWorkout}
+          onPress={
+            nextWorkout ? () => onTemplatePress(nextWorkout.recommendedTemplate.id) : undefined
+          }
           style={[
             styles.nextUpCard,
             {
               backgroundColor: palette.surface,
               borderColor: palette.border,
+              opacity: nextWorkout ? 1 : 0.8,
             },
           ]}>
           <ThemedText style={[styles.sectionLabel, { color: palette.accent }]}>
@@ -132,7 +143,7 @@ export function HomeScreenContent({
               No active workout templates are available yet.
             </ThemedText>
           )}
-        </ThemedView>
+        </Pressable>
 
         <View style={styles.sectionHeader}>
           <ThemedText type="subtitle" style={styles.sectionTitle}>

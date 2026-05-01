@@ -1,4 +1,15 @@
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useRef } from 'react';
+import {
+  ActivityIndicator,
+  findNodeHandle,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -23,6 +34,7 @@ type WorkoutLoggerScreenContentProps = {
   onAddSet: (exerciseId: string) => void;
   onDismissSaveError: () => void;
   onOpenHistory: (templateExerciseId: string) => void;
+  onRemoveSet: (exerciseId: string, setId: string) => void;
   onSaveWorkout: () => void;
   onToggleExerciseNote: (exerciseId: string) => void;
   onToggleSetNote: (exerciseId: string, setId: string) => void;
@@ -75,6 +87,7 @@ export function WorkoutLoggerScreenContent({
   onAddSet,
   onDismissSaveError,
   onOpenHistory,
+  onRemoveSet,
   onSaveWorkout,
   onToggleExerciseNote,
   onToggleSetNote,
@@ -84,6 +97,30 @@ export function WorkoutLoggerScreenContent({
   const colorScheme = useColorScheme() ?? 'dark';
   const theme = Colors[colorScheme];
   const palette = getPalette(colorScheme);
+  const scrollViewRef = useRef<ScrollView | null>(null);
+
+  function handleFieldFocus(input: TextInput | null): void {
+    if (!input || !scrollViewRef.current) {
+      return;
+    }
+
+    const scrollResponder =
+      scrollViewRef.current.getScrollResponder?.() as
+        | {
+            scrollResponderScrollNativeHandleToKeyboard?: (
+              nodeHandle: number | null,
+              additionalOffset?: number,
+              preventNegativeScrollOffset?: boolean
+            ) => void;
+          }
+        | undefined;
+
+    scrollResponder?.scrollResponderScrollNativeHandleToKeyboard?.(
+      findNodeHandle(input),
+      120,
+      true
+    );
+  }
 
   if (isLoading) {
     return (
@@ -109,80 +146,91 @@ export function WorkoutLoggerScreenContent({
 
   return (
     <ThemedView style={styles.screen}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        contentInsetAdjustmentBehavior="automatic"
-        showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <View style={styles.headerText}>
-            <ThemedText style={[styles.eyebrow, { color: palette.accent }]}>
-              Workout Logger
-            </ThemedText>
-            <ThemedText type="title" style={styles.title}>
-              {template.name}
-            </ThemedText>
-            <ThemedText style={[styles.supportingText, { color: palette.muted }]}>
-              Log the sets you complete. Empty rows are skipped when you save.
-            </ThemedText>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 96 : 24}
+        style={styles.screen}>
+        <ScrollView
+          ref={scrollViewRef}
+          contentContainerStyle={styles.content}
+          contentInsetAdjustmentBehavior="automatic"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          <View style={styles.header}>
+            <View style={styles.headerText}>
+              <ThemedText style={[styles.eyebrow, { color: palette.accent }]}>
+                Workout Logger
+              </ThemedText>
+              <ThemedText type="title" style={styles.title}>
+                {template.name}
+              </ThemedText>
+              <ThemedText style={[styles.supportingText, { color: palette.muted }]}>
+                Log the sets you complete. Empty rows are skipped when you save.
+              </ThemedText>
+            </View>
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Complete workout"
+              disabled={isSaving}
+              onPress={onSaveWorkout}
+              style={[
+                styles.completeButton,
+                {
+                  backgroundColor: palette.accent,
+                  opacity: isSaving ? 0.7 : 1,
+                },
+              ]}>
+              <ThemedText style={styles.completeButtonText}>
+                {isSaving ? 'Saving...' : 'Complete workout'}
+              </ThemedText>
+            </Pressable>
           </View>
 
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Complete workout"
-            disabled={isSaving}
-            onPress={onSaveWorkout}
-            style={[
-              styles.completeButton,
-              {
-                backgroundColor: palette.accent,
-                opacity: isSaving ? 0.7 : 1,
-              },
-            ]}>
-            <ThemedText style={styles.completeButtonText}>
-              {isSaving ? 'Saving...' : 'Complete workout'}
-            </ThemedText>
-          </Pressable>
-        </View>
+          {saveError ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={onDismissSaveError}
+              style={[
+                styles.validationCard,
+                {
+                  backgroundColor: palette.surfaceMuted,
+                  borderColor: palette.border,
+                },
+              ]}>
+              <ThemedText style={[styles.validationText, { color: theme.text }]}>
+                {saveError}
+              </ThemedText>
+            </Pressable>
+          ) : null}
 
-        {saveError ? (
-          <Pressable
-            accessibilityRole="button"
-            onPress={onDismissSaveError}
-            style={[
-              styles.validationCard,
-              {
-                backgroundColor: palette.surfaceMuted,
-                borderColor: palette.border,
-              },
-            ]}>
-            <ThemedText style={[styles.validationText, { color: theme.text }]}>
-              {saveError}
-            </ThemedText>
-          </Pressable>
-        ) : null}
-
-        <View style={styles.exerciseList}>
-          {exercises.map((exercise) => (
-            <ExerciseLogCard
-              key={exercise.id}
-              exercise={exercise}
-              latestPerformance={latestPerformanceByExerciseId[exercise.templateExerciseId] ?? null}
-              progressionSuggestion={
-                progressionSuggestionByExerciseId[exercise.templateExerciseId] ?? null
-              }
-              palette={palette}
-              onAddSet={() => onAddSet(exercise.id)}
-              onOpenHistory={() => onOpenHistory(exercise.templateExerciseId)}
-              onToggleExerciseNote={() => onToggleExerciseNote(exercise.id)}
-              onToggleSetNote={(setId) => onToggleSetNote(exercise.id, setId)}
-              onUpdateExerciseNotes={(value) => onUpdateExerciseNotes(exercise.id, value)}
-              onUpdateSetField={(setId, field, value) =>
-                onUpdateSetField(exercise.id, setId, field, value)
-              }
-            />
-          ))}
-        </View>
-      </ScrollView>
+          <View style={styles.exerciseList}>
+            {exercises.map((exercise) => (
+              <ExerciseLogCard
+                key={exercise.id}
+                exercise={exercise}
+                latestPerformance={
+                  latestPerformanceByExerciseId[exercise.templateExerciseId] ?? null
+                }
+                progressionSuggestion={
+                  progressionSuggestionByExerciseId[exercise.templateExerciseId] ?? null
+                }
+                palette={palette}
+                onAddSet={() => onAddSet(exercise.id)}
+                onFieldFocus={handleFieldFocus}
+                onOpenHistory={() => onOpenHistory(exercise.templateExerciseId)}
+                onRemoveSet={(setId) => onRemoveSet(exercise.id, setId)}
+                onToggleExerciseNote={() => onToggleExerciseNote(exercise.id)}
+                onToggleSetNote={(setId) => onToggleSetNote(exercise.id, setId)}
+                onUpdateExerciseNotes={(value) => onUpdateExerciseNotes(exercise.id, value)}
+                onUpdateSetField={(setId, field, value) =>
+                  onUpdateSetField(exercise.id, setId, field, value)
+                }
+              />
+            ))}
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </ThemedView>
   );
 }
@@ -211,7 +259,7 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: 14,
-    paddingBottom: 28,
+    paddingBottom: 140,
     paddingHorizontal: 16,
     paddingTop: 16,
   },

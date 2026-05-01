@@ -17,6 +17,7 @@ export default function WorkoutLoggerRoute() {
     saveError,
     addSet,
     dismissSaveError,
+    removeSet,
     saveWorkout,
     toggleExerciseNote,
     toggleSetNote,
@@ -59,6 +60,7 @@ export default function WorkoutLoggerRoute() {
             params: { templateExerciseId },
           })
         }
+        onRemoveSet={removeSet}
         onSaveWorkout={() =>
           void saveWorkout({
             onComplete: () => {

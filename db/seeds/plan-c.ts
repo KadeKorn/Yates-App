@@ -21,6 +21,7 @@ export const PLAN_C_EXERCISE_IDS = {
   day5LateralRaise: 'seed-exercise-day5-lateral-raise',
   day5Triceps: 'seed-exercise-day5-triceps',
   day5DbCurls: 'seed-exercise-day5-db-curls',
+  day5RearDeltMachine: 'seed-exercise-day5-rear-delt-machine',
   day5CurlMachine: 'seed-exercise-day5-curl-machine',
 } as const;
 
@@ -174,6 +175,13 @@ export const planCTemplateExerciseSeeds: readonly SeedTemplateExerciseRecord[] =
     id: PLAN_C_EXERCISE_IDS.day5DbCurls,
     templateId: PLAN_C_TEMPLATE_IDS.day5,
     name: 'DB Curls',
+    orderIndex: 4,
+    isActive: false,
+  },
+  {
+    id: PLAN_C_EXERCISE_IDS.day5RearDeltMachine,
+    templateId: PLAN_C_TEMPLATE_IDS.day5,
+    name: 'Rear Delt Machine',
     orderIndex: 4,
     isActive: true,
   },

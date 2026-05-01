@@ -93,6 +93,11 @@ const progressionDefaultsByTemplateExerciseId: Record<string, ProgressionConfig>
     targetRepMax: 12,
     suggestedIncrement: '5s',
   },
+  [PLAN_C_EXERCISE_IDS.day5RearDeltMachine]: {
+    targetRepMin: 10,
+    targetRepMax: 15,
+    suggestedIncrement: '10',
+  },
   [PLAN_C_EXERCISE_IDS.day5CurlMachine]: {
     targetRepMin: 8,
     targetRepMax: 12,

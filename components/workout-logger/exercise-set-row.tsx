@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -15,10 +16,12 @@ type ExerciseSetRowProps = {
     surfaceMuted: string;
   };
   set: WorkoutLoggerSetDraft;
+  onFieldFocus: (input: TextInput | null) => void;
   onFieldChange: (
     field: 'note' | 'repsText' | 'setType' | 'weightText',
     value: string
   ) => void;
+  onRemove: () => void;
   onToggleNote: () => void;
 };
 
@@ -36,11 +39,16 @@ function getSetTypeLabel(setType: SetTypeOption): string {
 export function ExerciseSetRow({
   palette,
   set,
+  onFieldFocus,
   onFieldChange,
+  onRemove,
   onToggleNote,
 }: ExerciseSetRowProps) {
   const colorScheme = useColorScheme() ?? 'dark';
   const theme = Colors[colorScheme];
+  const weightInputRef = useRef<TextInput | null>(null);
+  const repsInputRef = useRef<TextInput | null>(null);
+  const noteInputRef = useRef<TextInput | null>(null);
 
   return (
     <View
@@ -99,6 +107,8 @@ export function ExerciseSetRow({
             ]}
             value={set.weightText}
             onChangeText={(value) => onFieldChange('weightText', value)}
+            onFocus={() => onFieldFocus(weightInputRef.current)}
+            ref={weightInputRef}
           />
         </View>
 
@@ -118,15 +128,23 @@ export function ExerciseSetRow({
             ]}
             value={set.repsText}
             onChangeText={(value) => onFieldChange('repsText', value)}
+            onFocus={() => onFieldFocus(repsInputRef.current)}
+            ref={repsInputRef}
           />
         </View>
       </View>
 
-      <Pressable accessibilityRole="button" onPress={onToggleNote} style={styles.noteToggle}>
-        <ThemedText style={[styles.noteToggleText, { color: palette.accent }]}>
-          {set.isNoteExpanded || set.note.trim() ? 'Hide set note' : 'Add set note'}
-        </ThemedText>
-      </Pressable>
+      <View style={styles.actionRow}>
+        <Pressable accessibilityRole="button" onPress={onToggleNote} style={styles.noteToggle}>
+          <ThemedText style={[styles.noteToggleText, { color: palette.accent }]}>
+            {set.isNoteExpanded || set.note.trim() ? 'Hide set note' : 'Add set note'}
+          </ThemedText>
+        </Pressable>
+
+        <Pressable accessibilityRole="button" onPress={onRemove} style={styles.removeButton}>
+          <ThemedText style={[styles.removeText, { color: palette.muted }]}>Remove set</ThemedText>
+        </Pressable>
+      </View>
 
       {(set.isNoteExpanded || set.note.trim()) && (
         <TextInput
@@ -144,6 +162,8 @@ export function ExerciseSetRow({
           ]}
           value={set.note}
           onChangeText={(value) => onFieldChange('note', value)}
+          onFocus={() => onFieldFocus(noteInputRef.current)}
+          ref={noteInputRef}
         />
       )}
     </View>
@@ -151,6 +171,13 @@ export function ExerciseSetRow({
 }
 
 const styles = StyleSheet.create({
+  actionRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
   chip: {
     borderRadius: 999,
     borderWidth: 1,
@@ -215,7 +242,17 @@ const styles = StyleSheet.create({
   },
   noteToggleText: {
     fontSize: 14,
-    lineHeight: 20,
     fontWeight: '600',
+    lineHeight: 20,
+  },
+  removeButton: {
+    alignSelf: 'flex-start',
+    minHeight: 36,
+    justifyContent: 'center',
+  },
+  removeText: {
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 20,
   },
 });

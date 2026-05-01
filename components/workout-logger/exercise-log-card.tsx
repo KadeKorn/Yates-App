@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -21,7 +22,9 @@ type ExerciseLogCardProps = {
   };
   progressionSuggestion: ProgressionSuggestion | null;
   onAddSet: () => void;
+  onFieldFocus: (input: TextInput | null) => void;
   onOpenHistory: () => void;
+  onRemoveSet: (setId: string) => void;
   onToggleExerciseNote: () => void;
   onToggleSetNote: (setId: string) => void;
   onUpdateExerciseNotes: (value: string) => void;
@@ -38,7 +41,9 @@ export function ExerciseLogCard({
   palette,
   progressionSuggestion,
   onAddSet,
+  onFieldFocus,
   onOpenHistory,
+  onRemoveSet,
   onToggleExerciseNote,
   onToggleSetNote,
   onUpdateExerciseNotes,
@@ -46,7 +51,8 @@ export function ExerciseLogCard({
 }: ExerciseLogCardProps) {
   const colorScheme = useColorScheme() ?? 'dark';
   const theme = Colors[colorScheme];
-  const latestSets = latestPerformance?.sets.slice(0, 2) ?? [];
+  const latestSets = getCompactLatestSets(latestPerformance);
+  const exerciseNoteInputRef = useRef<TextInput | null>(null);
 
   return (
     <View
@@ -129,7 +135,9 @@ export function ExerciseLogCard({
             key={set.id}
             palette={palette}
             set={set}
+            onFieldFocus={onFieldFocus}
             onFieldChange={(field, value) => onUpdateSetField(set.id, field, value)}
+            onRemove={() => onRemoveSet(set.id)}
             onToggleNote={() => onToggleSetNote(set.id)}
           />
         ))}
@@ -194,10 +202,45 @@ export function ExerciseLogCard({
           ]}
           value={exercise.notes}
           onChangeText={onUpdateExerciseNotes}
+          onFocus={() => onFieldFocus(exerciseNoteInputRef.current)}
+          ref={exerciseNoteInputRef}
         />
       )}
     </View>
   );
+}
+
+function getCompactLatestSets(
+  latestPerformance: LatestExercisePerformance | null
+): LatestExercisePerformance['sets'] {
+  if (!latestPerformance) {
+    return [];
+  }
+
+  return [...latestPerformance.sets]
+    .filter((set) => set.setType !== 'warmup')
+    .sort((left, right) => {
+      const leftPriority = getCompactSetPriority(left.setType);
+      const rightPriority = getCompactSetPriority(right.setType);
+
+      if (leftPriority !== rightPriority) {
+        return leftPriority - rightPriority;
+      }
+
+      return left.setIndex - right.setIndex;
+    })
+    .slice(0, 2);
+}
+
+function getCompactSetPriority(setType: string): number {
+  switch (setType) {
+    case 'working':
+      return 0;
+    case 'burnout':
+      return 1;
+    default:
+      return 2;
+  }
 }
 
 function formatCompletedDate(value: string): string {

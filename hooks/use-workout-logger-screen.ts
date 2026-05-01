@@ -53,6 +53,7 @@ type UseWorkoutLoggerScreenResult = {
   template: ActiveWorkoutTemplateDetail | null;
   addSet: (exerciseId: string) => void;
   dismissSaveError: () => void;
+  removeSet: (exerciseId: string, setId: string) => void;
   saveWorkout: (params?: SaveWorkoutParams) => Promise<void>;
   toggleExerciseNote: (exerciseId: string) => void;
   toggleSetNote: (exerciseId: string, setId: string) => void;
@@ -274,6 +275,26 @@ export function useWorkoutLoggerScreen(templateId: string): UseWorkoutLoggerScre
     }));
   }
 
+  function removeSet(exerciseId: string, setId: string): void {
+    setSaveError(null);
+
+    updateExercise(exerciseId, (exercise) => {
+      if (exercise.sets.length <= 1) {
+        return {
+          ...exercise,
+          sets: [createEmptySetDraft()],
+        };
+      }
+
+      const remainingSets = exercise.sets.filter((set) => set.id !== setId);
+
+      return {
+        ...exercise,
+        sets: remainingSets.length > 0 ? remainingSets : [createEmptySetDraft()],
+      };
+    });
+  }
+
   function toggleExerciseNote(exerciseId: string): void {
     updateExercise(exerciseId, (exercise) => ({
       ...exercise,
@@ -368,6 +389,7 @@ export function useWorkoutLoggerScreen(templateId: string): UseWorkoutLoggerScre
     saveError,
     addSet,
     dismissSaveError,
+    removeSet,
     saveWorkout,
     toggleExerciseNote,
     toggleSetNote,
