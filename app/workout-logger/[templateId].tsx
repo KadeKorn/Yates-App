@@ -83,7 +83,7 @@ export default function WorkoutLoggerRoute() {
               <MaterialIcons
                 color={tintColor ?? '#F3F5F7'}
                 name="chevron-left"
-                size={32}
+                size={30}
               />
             </Pressable>
           ),
