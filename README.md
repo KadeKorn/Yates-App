@@ -46,7 +46,7 @@ The current MVP does **not** include:
 - [x] Validation for empty workout saves
 - [x] Home refresh after save
 
-### In progress
+### In progress - DONE GOING TO FORK
 - [ ] Exercise history screen
 - [ ] Template editor
 
