@@ -155,3 +155,32 @@ Seated Leg Curl: 115 x 10
 ## Non-goals for MVP
 
 Do not add cloud sync, auth, a heavy analytics layer, auto-progression math, or a scheduling engine before the core logger, latest-log queries, history, template editor, and queue are solid.
+
+
+## Workout lifecycle for MVP
+
+- Opening a workout day does not create a persisted workout row yet.
+- A workout is saved only when the user taps Complete Workout.
+- In-progress local screen state may exist during editing, but draft persistence is out of scope for MVP.
+- Completed workouts are immutable history records except for future explicit edit support.
+
+## Carry-forward behavior
+
+Carry-forward in MVP means:
+- the user may mark an exercise or note to be shown next time that workout day is opened
+- carry-forward does not automatically clone prior set values into history
+- carry-forward is a reminder mechanism, not a hidden rewrite of workout data
+
+## Next-up recommendation rules
+
+- The split order is fixed: day1 -> day2 -> day5.
+- If there are no completed workouts, recommend day1.
+- Otherwise recommend the next template in split order after the most recently completed workout.
+- Show elapsed time since the last completed workout.
+- Show elapsed time since the recommended workout day was last completed.
+
+## Display versus storage rules
+
+- The app may display friendly labels such as L, R, or Both.
+- Internal code should use canonical enum values for consistency.
+- Raw weight_text and reps_text must be stored exactly as entered.

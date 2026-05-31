@@ -41,14 +41,21 @@ The current MVP does **not** include:
 - [x] Repository read queries
 - [x] Queue recommendation logic
 - [x] DB-backed Home screen
+- [x] Workout logger flow
+- [x] Atomic workout save
+- [x] Validation for empty workout saves
+- [x] Home refresh after save
 
 ### In progress
-- [ ] Workout logger flow
-- [ ] Save completed workout atomically
 - [ ] Exercise history screen
 - [ ] Template editor
 
 ### Future state
+- [ ] Exercise history screen
+- [ ] Previous-performance display in logger
+- [ ] Template editor
+- [ ] Header/navigation polish
+- [ ] Dark-theme polish
 - [ ] Multiple training systems/templates
 - [ ] Custom template builder
 - [ ] Home workout mode
